@@ -140,7 +140,7 @@ function AiProviderSettings({ configs, onUpdate }: { configs: {provider: string,
                 setSelectedModel(p.models[0]);
               }}
             >
-              {AI_PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {AI_PROVIDERS.map((p, idx) => <option key={`prov-${p.id}-${idx}`} value={p.id}>{p.name}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
@@ -150,7 +150,7 @@ function AiProviderSettings({ configs, onUpdate }: { configs: {provider: string,
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
             >
-              {selectedProvider.models.map(m => <option key={m} value={m}>{m}</option>)}
+              {selectedProvider.models.map((m, idx) => <option key={`mod-${m}-${idx}`} value={m}>{m}</option>)}
             </select>
           </div>
         </div>
@@ -181,7 +181,7 @@ function AiProviderSettings({ configs, onUpdate }: { configs: {provider: string,
       <div className="space-y-2">
         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Active Configurations</h4>
         {configs.map((c, i) => (
-          <div key={i} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-xl hover:border-blue-200 transition-all group">
+          <div key={`cfg-${c.provider}-${c.model}-${i}`} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-xl hover:border-blue-200 transition-all group">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
                 <Cpu size={16} />

@@ -44,7 +44,7 @@ const nodeTypes = {
   step: StepNode,
 };
 
-function FlowCenterController({ scenarioId }: { scenarioId: string }) {
+function FlowCenterController({ scenarioId, viewMode }: { scenarioId: string; viewMode: 'scenario' | 'testcase' }) {
   const { fitView } = useReactFlow();
 
   React.useEffect(() => {
@@ -75,7 +75,7 @@ function FlowCenterController({ scenarioId }: { scenarioId: string }) {
       clearTimeout(t3);
       window.removeEventListener('resize', handleResize);
     };
-  }, [scenarioId, fitView]);
+  }, [scenarioId, viewMode, fitView]);
 
   return null;
 }
@@ -222,7 +222,7 @@ export function Editor({
               }}
               className="bg-gray-50"
             >
-              <FlowCenterController scenarioId={scenario.id} />
+              <FlowCenterController scenarioId={scenario.id} viewMode={viewMode} />
               <Background gap={20} color="#e5e7eb" />
               <Controls 
                 className="bg-white border-gray-200 shadow-lg rounded-lg overflow-hidden" 
@@ -243,7 +243,7 @@ export function Editor({
                     </div>
                     <div className="space-y-1">
                       {parentFolder.variables.map((v, i) => (
-                        <div key={i} className="flex justify-between items-center bg-blue-50/50 px-2 py-1 rounded border border-blue-100/30">
+                        <div key={`var-${v.key}-${i}`} className="flex justify-between items-center bg-blue-50/50 px-2 py-1 rounded border border-blue-100/30">
                           <span className="text-[8px] font-bold text-blue-800 uppercase">{v.key}</span>
                           <span className="text-[9px] font-mono text-blue-600">{v.value}</span>
                         </div>
@@ -266,8 +266,8 @@ export function Editor({
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Test Parameters</span>
                     </div>
                     <div className="space-y-3">
-                      {Object.entries(selectedTestCase.inputs).map(([key, val]) => (
-                        <div key={key}>
+                      {Object.entries(selectedTestCase.inputs).map(([key, val], idx) => (
+                        <div key={`input-${key}-${idx}`}>
                           <label className="text-[9px] font-bold text-gray-400 uppercase">{key}</label>
                           <div className="text-xs font-semibold text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-100">{String(val)}</div>
                         </div>
@@ -300,13 +300,16 @@ export function Editor({
         </ReactFlowProvider>
       </div>
 
-        <PropertyPanel 
-          node={selectedNode} 
-          nodes={scenario.nodes}
-          onSelectNode={(id) => setSelectedNodeId(id)}
-          onClose={() => setSelectedNodeId(null)}
-          onUpdateNode={handleUpdateNodeData}
-        />
+        {viewMode === 'scenario' && (
+          <PropertyPanel 
+            node={selectedNode} 
+            nodes={scenario.nodes}
+            viewMode={viewMode}
+            onSelectNode={(id) => setSelectedNodeId(id)}
+            onClose={() => setSelectedNodeId(null)}
+            onUpdateNode={handleUpdateNodeData}
+          />
+        )}
       </div>
     );
   }

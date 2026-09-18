@@ -54,8 +54,8 @@ export function LogPanel({ logs, onClear }: LogPanelProps) {
             </div>
           ) : (
             <div className="space-y-0.5">
-              {logs.map((log) => (
-                <div key={log.id} className="flex gap-4 hover:bg-gray-800/50 px-2 py-0.5 rounded">
+              {logs.map((log, index) => (
+                <div key={`${log.id}-${index}`} className="flex gap-4 hover:bg-gray-800/50 px-2 py-0.5 rounded">
                   <span className="text-gray-500 shrink-0">
                     {log.timestamp.toLocaleTimeString([], { hour12: false })}
                   </span>

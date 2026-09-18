@@ -164,8 +164,8 @@ export function AIPrompt({
                     onChange={(e) => setSelectedModel(e.target.value)}
                     className="appearance-none bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold pl-2.5 pr-7 py-1.5 rounded-lg outline-none cursor-pointer focus:border-blue-500 transition-colors shadow-2xs"
                   >
-                    {availableModels.map(m => (
-                      <option key={m} value={m}>{m}</option>
+                    {availableModels.map((m, mIdx) => (
+                      <option key={`model-${m}-${mIdx}`} value={m}>{m}</option>
                     ))}
                   </select>
                   <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -223,7 +223,7 @@ export function AIPrompt({
                 <div className="flex flex-wrap gap-1.5">
                   {PRESET_PROMPTS.map((preset, idx) => (
                     <button
-                      key={idx}
+                      key={`preset-${idx}-${preset.label}`}
                       onClick={() => setPrompt(preset.prompt)}
                       className="px-2.5 py-1 bg-gray-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border border-transparent text-gray-600 text-xs rounded-lg transition-all active:scale-95 text-left"
                     >

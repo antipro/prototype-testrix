@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { TestStepNode, TestStatus, UnitType } from '../types';
 import { 
   X, 
@@ -37,6 +37,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface PropertyPanelProps {
   node: TestStepNode | null;
   nodes?: TestStepNode[];
+  viewMode?: 'scenario' | 'testcase';
   onSelectNode?: (nodeId: string) => void;
   onClose?: () => void;
   onUpdateNode: (nodeId: string, data: any) => void;
@@ -184,6 +185,7 @@ const MOCK_AUDIT_RECORDS: AuditRecord[] = [
 export function PropertyPanel({ 
   node, 
   nodes = [], 
+  viewMode = 'scenario',
   onSelectNode, 
   onClose, 
   onUpdateNode 
@@ -206,13 +208,15 @@ export function PropertyPanel({
   const [selectedAuditRecord, setSelectedAuditRecord] = useState<AuditRecord | null>(null);
   const [copiedTraceId, setCopiedTraceId] = useState<string | null>(null);
 
-  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'properties', label: 'Node Properties', icon: <Settings2 size={13} /> },
-    { id: 'payload', label: 'Payload', icon: <Code2 size={13} /> },
-    { id: 'auth', label: 'Auth', icon: <Key size={13} /> },
-    { id: 'assertions', label: 'Safety', icon: <ShieldCheck size={13} />, badge: '3' },
-    { id: 'audit', label: 'Audit Records', icon: <History size={13} />, badge: '6' },
-  ];
+  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = useMemo(() => {
+    return [
+      { id: 'properties', label: 'Node Properties', icon: <Settings2 size={13} /> },
+      { id: 'payload', label: 'Payload', icon: <Code2 size={13} /> },
+      { id: 'auth', label: 'Auth', icon: <Key size={13} /> },
+      { id: 'assertions', label: 'Safety', icon: <ShieldCheck size={13} />, badge: '3' },
+      { id: 'audit', label: 'Audit Records', icon: <History size={13} />, badge: '6' },
+    ];
+  }, []);
 
   const handleDataChange = (field: string, value: any) => {
     if (!node) return;
@@ -272,9 +276,9 @@ export function PropertyPanel({
       <div className="h-11 px-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/80 select-none">
         {/* Tabs - starts directly from the left for maximum width */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto py-1">
-          {tabs.map((tab) => (
+          {tabs.map((tab, idx) => (
             <button
-              key={tab.id}
+              key={`${tab.id}-${idx}`}
               onClick={() => {
                 setActiveTab(tab.id);
                 if (!isExpanded) handleToggleExpanded(true);
@@ -313,7 +317,6 @@ export function PropertyPanel({
             {isSaved ? <Check size={13} /> : <CheckCircle2 size={13} />}
             <span>{isSaved ? 'Saved' : 'Save'}</span>
           </button>
-
           <div className="h-4 w-[1px] bg-gray-200 mx-1" />
 
           <button 
@@ -788,10 +791,10 @@ export function PropertyPanel({
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-xs">
-                              {filteredAuditRecords.map((rec) => {
+                              {filteredAuditRecords.map((rec, rIdx) => {
                                 const isSelected = selectedAuditRecord?.id === rec.id;
                                 return (
-                                  <React.Fragment key={rec.id}>
+                                  <React.Fragment key={`${rec.id}-${rIdx}`}>
                                     <tr 
                                       onClick={() => setSelectedAuditRecord(isSelected ? null : rec)}
                                       className={`hover:bg-blue-50/40 cursor-pointer transition-colors ${

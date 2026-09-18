@@ -226,7 +226,7 @@ function ProjectSettings({ project, onUpdateProject }: { project: Project | null
 
               <div className="space-y-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {project.contextFolders.map((folderPath, index) => (
-                  <div key={index} className="flex items-center justify-between group p-2 hover:bg-gray-50 rounded-md border border-transparent hover:border-gray-100 transition-all">
+                  <div key={`ctx-${folderPath}-${index}`} className="flex items-center justify-between group p-2 hover:bg-gray-50 rounded-md border border-transparent hover:border-gray-100 transition-all">
                     <div className="flex items-center gap-2">
                       <FolderIcon size={14} className="text-blue-500" />
                       <span className="text-xs text-gray-600 font-bold">{folderPath}</span>
@@ -322,7 +322,7 @@ function FolderSettings({ folder, onUpdateFolder }: { folder: Folder | null, onU
 
               <div className="space-y-2">
                 {(folder.variables || []).map((v, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs p-3 bg-gray-50 rounded-xl border border-gray-100 group">
+                  <div key={`var-${v.key}-${i}`} className="flex justify-between items-center text-xs p-3 bg-gray-50 rounded-xl border border-gray-100 group">
                     <div className="flex items-center gap-4">
                       <span className="font-bold text-gray-400 uppercase tracking-wider">{v.key}</span>
                       <span className="text-gray-600 font-mono">{v.value}</span>
@@ -347,8 +347,8 @@ function FolderSettings({ folder, onUpdateFolder }: { folder: Folder | null, onU
 
           <SettingsCard icon={<LayoutGrid size={18} />} title="Contained Scenarios">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {folder.scenarios.map(s => (
-                <div key={s.id} className="p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group">
+              {folder.scenarios.map((s, sIdx) => (
+                <div key={`scen-${s.id}-${sIdx}`} className="p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group">
                   <div className="text-xs font-bold text-gray-900 group-hover:text-blue-600 mb-1">{s.name}</div>
                   <div className="text-[10px] text-gray-400 line-clamp-1 font-medium">{s.description}</div>
                 </div>
@@ -442,7 +442,7 @@ export default function App() {
 
   const addLog = useCallback((message: string, level: LogEntry['level'] = 'info') => {
     const newLog: LogEntry = {
-      id: Math.random().toString(36).substring(7),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       timestamp: new Date(),
       level,
       message

@@ -67,8 +67,8 @@ export function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto py-2 space-y-1">
-        {projects.map(project => (
-          <div key={project.id} className="px-2">
+        {projects.map((project, pIdx) => (
+          <div key={`p-${project.id}-${pIdx}`} className="px-2">
             <button 
               onClick={() => onSelectProject(project.id)}
               className={`w-full flex items-center gap-2 px-2 py-1.5 text-[11px] font-bold rounded-md transition-all ${
@@ -86,8 +86,8 @@ export function Sidebar({
             
             {expanded[project.id] && (
               <div className="mt-1 space-y-1 ml-2 border-l border-gray-200 pl-2">
-                {project.folders.map(folder => (
-                  <div key={folder.id}>
+                {project.folders.map((folder, fIdx) => (
+                  <div key={`f-${folder.id}-${fIdx}`}>
                     <button 
                       onClick={() => onSelectFolder(folder.id)}
                       className={`w-full flex items-center gap-2 px-2 py-1 text-[11px] font-bold rounded-md transition-all ${
@@ -105,8 +105,8 @@ export function Sidebar({
 
                     {expanded[folder.id] && (
                       <div className="mt-0.5 space-y-0.5 ml-2 border-l border-gray-100 pl-2">
-                        {folder.scenarios.map(scenario => (
-                          <div key={scenario.id}>
+                        {folder.scenarios.map((scenario, sIdx) => (
+                          <div key={`s-${scenario.id}-${sIdx}`}>
                             <button
                               onClick={() => onSelectScenario(scenario.id)}
                               className={`w-full flex items-center gap-2 px-2 py-1.5 text-[11px] rounded-md transition-all group ${
@@ -121,9 +121,9 @@ export function Sidebar({
 
                             {selectedScenarioId === scenario.id && (
                               <div className="mt-0.5 space-y-0.5 ml-4 border-l border-gray-100 pl-2">
-                                {scenario.testCases.map(tc => (
+                                {scenario.testCases.map((tc, tcIdx) => (
                                   <button
-                                    key={tc.id}
+                                    key={`tc-${tc.id}-${tcIdx}`}
                                     onClick={() => onSelectTestCase(tc.id)}
                                     className={`w-full flex items-center gap-2 px-2 py-1 text-[10px] rounded-md transition-all ${
                                       selectedTestCaseId === tc.id 

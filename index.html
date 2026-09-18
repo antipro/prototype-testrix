@@ -9,6 +9,26 @@
     <meta property="og:description" content="A professional automation testing interface for desktop applications." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          var fetchHandler = originalFetch ? originalFetch.bind(window) : undefined;
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+              return fetchHandler;
+            },
+            set: function(val) {
+              fetchHandler = val;
+            }
+          });
+        } catch (e) {
+          // Fallback if defineProperty fails
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
