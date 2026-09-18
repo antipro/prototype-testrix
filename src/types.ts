@@ -81,12 +81,14 @@ export interface TestCase {
 export interface Folder {
   id: string;
   name: string;
+  variables?: { key: string; value: string }[];
   scenarios: Scenario[];
 }
 
 export interface Project {
   id: string;
   name: string;
+  contextFolders: string[];
   folders: Folder[];
 }
 

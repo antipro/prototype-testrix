@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { ControlPanel } from './components/ControlPanel';
 import { Sidebar } from './components/Sidebar';
 import { Editor } from './components/Editor';
@@ -11,16 +11,26 @@ import { LogPanel } from './components/LogPanel';
 import { SettingsDialog } from './components/SettingsDialog';
 import { Project, Folder, Scenario, TestCase, TestStepNode, LogEntry } from './types';
 import { Edge } from '@xyflow/react';
-import { Settings, Folder as FolderIcon, LayoutGrid, Info, Share2, Save } from 'lucide-react';
+import { Settings, Folder as FolderIcon, LayoutGrid, Info, Share2, Save, Code2, Trash2, Plus } from 'lucide-react';
 
 const INITIAL_PROJECTS: Project[] = [
   {
     id: 'p1',
     name: 'Hospital Management',
+    contextFolders: [
+      '/src',
+      '/tests',
+      '/config',
+      '/docs'
+    ],
     folders: [
       {
         id: 'f1',
-        name: 'Prescriptions',
+        name: '/Prescriptions',
+        variables: [
+          { key: 'API_VERSION', value: 'v1' },
+          { key: 'RETRY_LIMIT', value: '3' }
+        ],
         scenarios: [
           {
             id: 's1',
@@ -134,7 +144,7 @@ const INITIAL_LOGS: LogEntry[] = [
   { id: 'l2', timestamp: new Date(), level: 'info', message: 'Ready for deterministic orchestration.' },
 ];
 
-function ProjectSettings({ project }: { project: Project | null }) {
+function ProjectSettings({ project, onUpdateProject }: { project: Project | null, onUpdateProject: (id: string, updates: Partial<Project>) => void }) {
   if (!project) return null;
   return (
     <div className="flex-1 bg-white p-8 overflow-y-auto">
@@ -161,7 +171,7 @@ function ProjectSettings({ project }: { project: Project | null }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <SettingsCard icon={<Settings size={18} />} title="Global Variables">
             <div className="space-y-2">
               <div className="flex justify-between text-xs p-2 bg-gray-50 rounded border">
@@ -188,20 +198,73 @@ function ProjectSettings({ project }: { project: Project | null }) {
             </div>
           </SettingsCard>
         </div>
+
+        <SettingsCard icon={<FolderIcon size={18} />} title="Project Folders">
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input 
+                  type="text"
+                  placeholder="e.g. /src/services"
+                  className="flex-1 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.currentTarget;
+                      if (input.value.trim()) {
+                        onUpdateProject(project.id, { 
+                          contextFolders: [...project.contextFolders, input.value.trim()] 
+                        });
+                        input.value = '';
+                      }
+                    }
+                  }}
+                />
+                <button className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  <Plus size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                {project.contextFolders.map((folderPath, index) => (
+                  <div key={index} className="flex items-center justify-between group p-2 hover:bg-gray-50 rounded-md border border-transparent hover:border-gray-100 transition-all">
+                    <div className="flex items-center gap-2">
+                      <FolderIcon size={14} className="text-blue-500" />
+                      <span className="text-xs text-gray-600 font-bold">{folderPath}</span>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const newFolders = [...project.contextFolders];
+                        newFolders.splice(index, 1);
+                        onUpdateProject(project.id, { contextFolders: newFolders });
+                      }}
+                      className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="pt-4 border-t border-gray-100">
+                 <p className="text-[10px] text-gray-400 leading-relaxed italic">
+                   Note: These directories are indexed to provide architectural context for the AI Orchestration agent.
+                 </p>
+              </div>
+            </div>
+          </SettingsCard>
       </div>
     </div>
   );
 }
 
-function FolderSettings({ folder }: { folder: Folder | null }) {
+function FolderSettings({ folder, onUpdateFolder }: { folder: Folder | null, onUpdateFolder: (id: string, updates: Partial<Folder>) => void }) {
   if (!folder) return null;
   return (
     <div className="flex-1 bg-white p-8 overflow-y-auto">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between gap-3 mb-8 border-b pb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-gray-50 rounded-xl">
-              <FolderIcon className="text-gray-600" size={32} />
+            <div className="p-3 bg-blue-50 rounded-xl">
+              <FolderIcon className="text-blue-600" size={32} />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{folder.name}</h1>
@@ -217,19 +280,80 @@ function FolderSettings({ folder }: { folder: Folder | null }) {
         <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg mb-6">
           <div className="flex gap-3">
             <Info className="text-blue-600 shrink-0" size={20} />
-            <p className="text-sm text-blue-800">
-              Settings defined here will be automatically applied to all Scenarios within this folder.
+            <p className="text-sm text-blue-800 font-medium">
+              Variables defined here are automatically inherited by all Scenarios within this directory.
             </p>
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="p-4 border rounded-lg bg-gray-50">
-            <h3 className="text-sm font-bold mb-4">Shared Setup Hook</h3>
-            <pre className="text-xs bg-gray-900 text-green-400 p-4 rounded-md font-mono">
-              {`// Automatically runs before each scenario\nasync function setup() {\n  await context.login('qa-user');\n  await context.clearCache();\n}`}
-            </pre>
-          </div>
+          <SettingsCard icon={<Settings size={18} />} title="Folder Variables">
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input 
+                  type="text"
+                  placeholder="Variable Name"
+                  className="flex-1 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-colors"
+                  id="folder-var-key"
+                />
+                <input 
+                  type="text"
+                  placeholder="Value"
+                  className="flex-1 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 transition-colors"
+                  id="folder-var-val"
+                />
+                <button 
+                  onClick={() => {
+                    const keyInput = document.getElementById('folder-var-key') as HTMLInputElement;
+                    const valInput = document.getElementById('folder-var-val') as HTMLInputElement;
+                    if (keyInput.value && valInput.value) {
+                      const newVars = [...(folder.variables || []), { key: keyInput.value, value: valInput.value }];
+                      onUpdateFolder(folder.id, { variables: newVars });
+                      keyInput.value = '';
+                      valInput.value = '';
+                    }
+                  }}
+                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {(folder.variables || []).map((v, i) => (
+                  <div key={i} className="flex justify-between items-center text-xs p-3 bg-gray-50 rounded-xl border border-gray-100 group">
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-gray-400 uppercase tracking-wider">{v.key}</span>
+                      <span className="text-gray-600 font-mono">{v.value}</span>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const newVars = (folder.variables || []).filter((_, idx) => idx !== i);
+                        onUpdateFolder(folder.id, { variables: newVars });
+                      }}
+                      className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+                {(!folder.variables || folder.variables.length === 0) && (
+                  <p className="text-center py-4 text-gray-400 text-[10px] italic">No folder-level variables defined.</p>
+                )}
+              </div>
+            </div>
+          </SettingsCard>
+
+          <SettingsCard icon={<LayoutGrid size={18} />} title="Contained Scenarios">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {folder.scenarios.map(s => (
+                <div key={s.id} className="p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group">
+                  <div className="text-xs font-bold text-gray-900 group-hover:text-blue-600 mb-1">{s.name}</div>
+                  <div className="text-[10px] text-gray-400 line-clamp-1 font-medium">{s.description}</div>
+                </div>
+              ))}
+            </div>
+          </SettingsCard>
         </div>
       </div>
     </div>
@@ -273,9 +397,14 @@ export default function App() {
   , [projects, selectedProjectId]);
 
   const selectedFolder = useMemo(() => {
-    if (!selectedProject) return null;
-    return selectedProject.folders.find(f => f.id === selectedFolderId) || null;
-  }, [selectedProject, selectedFolderId]);
+    if (selectedFolderId) {
+      for (const p of projects) {
+        const folder = p.folders.find(f => f.id === selectedFolderId);
+        if (folder) return folder;
+      }
+    }
+    return null;
+  }, [projects, selectedFolderId]);
 
   const selectedScenario = useMemo(() => {
     if (!selectedScenarioId) return null;
@@ -300,6 +429,15 @@ export default function App() {
     }
     return null;
   }, [projects, selectedTestCaseId]);
+
+  const [aiConfigs, setAiConfigs] = useState<{provider: string, model: string, apiKey: string}[]>(() => {
+    const saved = localStorage.getItem('testrix_ai_configs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('testrix_ai_configs', JSON.stringify(aiConfigs));
+  }, [aiConfigs]);
 
   const addLog = useCallback((message: string, level: LogEntry['level'] = 'info') => {
     const newLog: LogEntry = {
@@ -361,6 +499,17 @@ export default function App() {
     })));
   }, [selectedScenarioId]);
 
+  const handleUpdateProject = useCallback((id: string, updates: Partial<Project>) => {
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  }, []);
+
+  const handleUpdateFolder = useCallback((id: string, updates: Partial<Folder>) => {
+    setProjects(prev => prev.map(project => ({
+      ...project,
+      folders: project.folders.map(f => f.id === id ? { ...f, ...updates } : f)
+    })));
+  }, []);
+
   return (
     <div className="flex flex-col h-screen bg-gray-100 text-gray-900 font-sans overflow-hidden">
       <ControlPanel onOpenSettings={() => setIsSettingsOpen(true)} />
@@ -412,14 +561,15 @@ export default function App() {
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {viewMode === 'project' && (
-              <ProjectSettings project={selectedProject} />
+              <ProjectSettings project={selectedProject} onUpdateProject={handleUpdateProject} />
             )}
             {viewMode === 'folder' && (
-              <FolderSettings folder={selectedFolder} />
+              <FolderSettings folder={selectedFolder} onUpdateFolder={handleUpdateFolder} />
             )}
             {(viewMode === 'scenario' || viewMode === 'testcase') && (
               <Editor 
                 scenario={selectedScenario} 
+                parentFolder={projects.flatMap(p => p.folders).find(f => f.scenarios.some(s => s.id === selectedScenarioId)) || null}
                 selectedTestCase={selectedTestCase}
                 viewMode={viewMode}
                 isRunning={isRunning}
@@ -445,20 +595,9 @@ export default function App() {
       <SettingsDialog 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
+        aiConfigs={aiConfigs}
+        onUpdateAiConfigs={setAiConfigs}
       />
-
-      <footer className="h-6 bg-blue-600 text-white flex items-center justify-between px-3 text-[10px] uppercase tracking-wider font-semibold shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-            <span>Testrix Runner Active</span>
-          </div>
-          <span>Deterministic Orchestration Mode</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span>v1.2.0-stable</span>
-        </div>
-      </footer>
     </div>
   );
 }

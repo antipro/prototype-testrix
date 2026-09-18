@@ -4,18 +4,26 @@
  */
 
 import React, { useState } from 'react';
-import { X, Database, ShieldCheck, Globe, Code2, Users, Plus, Trash2 } from 'lucide-react';
+import { X, Database, ShieldCheck, Globe, Code2, Users, Plus, Trash2, Cpu, Key, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Role, DataSource, Environment } from '../types';
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  aiConfigs: {provider: string, model: string, apiKey: string}[];
+  onUpdateAiConfigs: (configs: {provider: string, model: string, apiKey: string}[]) => void;
 }
 
-type SettingsTab = 'roles' | 'datasources' | 'environments';
+type SettingsTab = 'roles' | 'datasources' | 'environments' | 'ai';
 
-export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
+const AI_PROVIDERS = [
+  { id: 'gemini', name: 'Google Gemini', models: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'] },
+  { id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
+  { id: 'anthropic', name: 'Anthropic', models: ['claude-3-5-sonnet', 'claude-3-opus', 'claude-3-haiku'] }
+];
+
+export function SettingsDialog({ isOpen, onClose, aiConfigs, onUpdateAiConfigs }: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('roles');
 
   if (!isOpen) return null;
@@ -68,6 +76,14 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               icon={<Globe size={16} />}
               label="Environments"
             />
+            <div className="pt-2 mt-2 border-t border-gray-200">
+              <TabButton 
+                active={activeTab === 'ai'} 
+                onClick={() => setActiveTab('ai')}
+                icon={<Cpu size={16} />}
+                label="AI Providers"
+              />
+            </div>
           </div>
 
           {/* Content Area */}
@@ -83,11 +99,112 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
                 {activeTab === 'roles' && <RolesSettings />}
                 {activeTab === 'datasources' && <DataSourceSettings />}
                 {activeTab === 'environments' && <EnvironmentSettings />}
+                {activeTab === 'ai' && <AiProviderSettings configs={aiConfigs} onUpdate={onUpdateAiConfigs} />}
               </motion.div>
             </AnimatePresence>
           </div>
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+function AiProviderSettings({ configs, onUpdate }: { configs: {provider: string, model: string, apiKey: string}[], onUpdate: (c: any[]) => void }) {
+  const [selectedProvider, setSelectedProvider] = useState(AI_PROVIDERS[0]);
+  const [selectedModel, setSelectedModel] = useState(AI_PROVIDERS[0].models[0]);
+  const [apiKey, setApiKey] = useState('');
+
+  const handleAdd = () => {
+    if (apiKey) {
+      onUpdate([...configs, { provider: selectedProvider.name, model: selectedModel, apiKey }]);
+      setApiKey('');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest">AI LLM Providers</h3>
+        <p className="text-xs text-gray-500 mt-1">Configure API keys for external Large Language Models used in test generation.</p>
+      </div>
+
+      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Provider</label>
+            <select 
+              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500"
+              onChange={(e) => {
+                const p = AI_PROVIDERS.find(ap => ap.id === e.target.value)!;
+                setSelectedProvider(p);
+                setSelectedModel(p.models[0]);
+              }}
+            >
+              {AI_PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Model</label>
+            <select 
+              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500"
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+            >
+              {selectedProvider.models.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">API Key</label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="password"
+                placeholder="Paste your API key here..."
+                className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 font-mono"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+            </div>
+            <button 
+              onClick={handleAdd}
+              className="px-4 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2"
+            >
+              <Plus size={14} /> Add
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Active Configurations</h4>
+        {configs.map((c, i) => (
+          <div key={i} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-xl hover:border-blue-200 transition-all group">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                <Cpu size={16} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-800">{c.provider}</div>
+                <div className="text-[10px] text-gray-400 font-medium">{c.model} • {c.apiKey.slice(0, 4)}••••••••</div>
+              </div>
+            </div>
+            <button 
+              onClick={() => onUpdate(configs.filter((_, idx) => idx !== i))}
+              className="p-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ))}
+        {configs.length === 0 && (
+          <div className="text-center py-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-100">
+            <p className="text-xs text-gray-400 font-medium italic">No AI keys configured yet.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

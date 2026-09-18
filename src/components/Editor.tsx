@@ -20,7 +20,7 @@ import {
   EdgeChange
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Scenario, TestCase, TestStepNode } from '../types';
+import { Project, Folder, Scenario, TestCase, TestStepNode } from '../types';
 import { StepNode } from './StepNode';
 import { PropertyPanel } from './PropertyPanel';
 import { Plus, Settings2, Play, Square, Circle, Layers, PlayCircle, Share2, Save } from 'lucide-react';
@@ -28,6 +28,7 @@ import { AnimatePresence, motion } from 'motion/react';
 
 interface EditorProps {
   scenario: Scenario | null;
+  parentFolder: Folder | null;
   selectedTestCase: TestCase | null;
   viewMode: 'scenario' | 'testcase';
   isRunning: boolean;
@@ -45,6 +46,7 @@ const nodeTypes = {
 
 export function Editor({ 
   scenario,
+  parentFolder,
   selectedTestCase,
   viewMode,
   isRunning, 
@@ -192,6 +194,29 @@ export function Editor({
             />
             
             <AnimatePresence>
+              {parentFolder && parentFolder.variables && parentFolder.variables.length > 0 && (
+                <Panel position="bottom-right" className="mb-4 mr-4">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white/90 backdrop-blur shadow-lg border border-gray-100 rounded-xl p-3 min-w-[180px]"
+                  >
+                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-blue-600 uppercase tracking-widest mb-2 border-b border-gray-50 pb-1.5">
+                      <Settings2 size={10} />
+                      Inherited Context
+                    </div>
+                    <div className="space-y-1">
+                      {parentFolder.variables.map((v, i) => (
+                        <div key={i} className="flex justify-between items-center bg-blue-50/50 px-2 py-1 rounded border border-blue-100/30">
+                          <span className="text-[8px] font-bold text-blue-800 uppercase">{v.key}</span>
+                          <span className="text-[9px] font-mono text-blue-600">{v.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </Panel>
+              )}
+
               {selectedTestCase && (
                 <Panel position="top-right" className="mr-4 mt-4">
                   <motion.div 
