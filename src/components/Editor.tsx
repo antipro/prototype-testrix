@@ -6,6 +6,8 @@
 import React, { useCallback, useState } from 'react';
 import { 
   ReactFlow, 
+  ReactFlowProvider,
+  useReactFlow,
   Background, 
   Controls, 
   MiniMap, 
@@ -42,6 +44,42 @@ const nodeTypes = {
   step: StepNode,
 };
 
+function FlowCenterController({ scenarioId }: { scenarioId: string }) {
+  const { fitView } = useReactFlow();
+
+  React.useEffect(() => {
+    // Re-center horizontally and vertically (上下和左右居中)
+    const center = () => {
+      fitView({
+        padding: 0.3,
+        minZoom: 0.7,
+        maxZoom: 1.0,
+        duration: 250,
+      });
+    };
+
+    // Staggered calls ensure centering after bottom panel and canvas layout stabilize
+    center();
+    const t1 = setTimeout(center, 60);
+    const t2 = setTimeout(center, 250);
+    const t3 = setTimeout(center, 500);
+
+    const handleResize = () => {
+      fitView({ padding: 0.3, duration: 150 });
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [scenarioId, fitView]);
+
+  return null;
+}
+
 export function Editor({ 
   scenario,
   parentFolder,
@@ -54,6 +92,14 @@ export function Editor({
   onStop,
 }: EditorProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (scenario && scenario.nodes.length > 0) {
+      if (!selectedNodeId || !scenario.nodes.some(n => n.id === selectedNodeId)) {
+        setSelectedNodeId(scenario.nodes[0].id);
+      }
+    }
+  }, [scenario?.id]);
 
   const selectedNode = scenario?.nodes.find(n => n.id === selectedNodeId) || null;
 
@@ -103,9 +149,8 @@ export function Editor({
   }
 
   return (
-    <div className="flex-1 flex bg-white relative overflow-hidden">
-      <div className="flex-1 relative flex flex-col min-w-0">
-        <div className="h-14 border-b border-gray-100 bg-white/90 backdrop-blur-md z-10 px-6 flex items-center justify-between shrink-0">
+    <div className="flex-1 flex flex-col bg-white relative overflow-hidden">
+      <div className="h-14 border-b border-gray-100 bg-white/90 backdrop-blur-md z-10 px-6 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase tracking-widest">Scenario</span>
@@ -155,25 +200,34 @@ export function Editor({
           </div>
         </div>
 
-        <div className="flex-1 relative">
-          <ReactFlow
-            nodes={scenario.nodes}
-            edges={scenario.edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            onPaneClick={() => setSelectedNodeId(null)}
-            nodeTypes={nodeTypes}
-            nodesDraggable={false}
-            fitView
-            className="bg-gray-50"
-          >
-            <Background gap={20} color="#e5e7eb" />
-            <Controls 
-              className="bg-white border-gray-200 shadow-lg rounded-lg overflow-hidden" 
-              showInteractive={false}
-            />
+        <div className="flex-1 relative min-h-0">
+          <ReactFlowProvider>
+            <ReactFlow
+              key={scenario.id}
+              nodes={scenario.nodes}
+              edges={scenario.edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodeClick={onNodeClick}
+              onPaneClick={() => setSelectedNodeId(null)}
+              nodeTypes={nodeTypes}
+              nodesDraggable={false}
+              fitView
+              fitViewOptions={{
+                padding: 0.35,
+                minZoom: 0.65,
+                maxZoom: 1.0,
+                includeHiddenNodes: false
+              }}
+              className="bg-gray-50"
+            >
+              <FlowCenterController scenarioId={scenario.id} />
+              <Background gap={20} color="#e5e7eb" />
+              <Controls 
+                className="bg-white border-gray-200 shadow-lg rounded-lg overflow-hidden" 
+                showInteractive={false}
+              />
             
             <AnimatePresence>
               {parentFolder && parentFolder.variables && parentFolder.variables.length > 0 && (
@@ -243,19 +297,17 @@ export function Editor({
               </Panel>
             )}
           </ReactFlow>
-        </div>
+        </ReactFlowProvider>
       </div>
 
-      <AnimatePresence>
-        {selectedNode && (
-          <PropertyPanel 
-            node={selectedNode} 
-            onClose={() => setSelectedNodeId(null)}
-            onUpdateNode={handleUpdateNodeData}
-          />
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+        <PropertyPanel 
+          node={selectedNode} 
+          nodes={scenario.nodes}
+          onSelectNode={(id) => setSelectedNodeId(id)}
+          onClose={() => setSelectedNodeId(null)}
+          onUpdateNode={handleUpdateNodeData}
+        />
+      </div>
+    );
+  }
 

@@ -23,14 +23,14 @@ export function ControlPanel({ onOpenSettings, onOpenAiAssistant }: ControlPanel
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1 border-gray-200">
-          <IconButton 
-            icon={<Plus size={18} />} 
-            label="AI Action" 
-            onClick={onOpenAiAssistant}
-            primary
-          />
-        </div>
+        <button 
+          onClick={onOpenAiAssistant}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all active:scale-95 group"
+          title="输入大模型文本 (Prompt)"
+        >
+          <Sparkles size={14} className="text-blue-200 group-hover:rotate-12 transition-transform" />
+          <span>Prompt</span>
+        </button>
 
         <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md">
           <span className="text-xs text-gray-500 font-medium">Environment:</span>

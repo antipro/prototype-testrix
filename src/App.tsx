@@ -467,12 +467,12 @@ export default function App() {
     addLog('Execution aborted.', 'warn');
   }, [addLog]);
 
-  const handleAiSubmit = useCallback((prompt: string) => {
-    addLog(`AI Processing request: "${prompt}"`, 'info');
-    // In a real app, we would call the Gemini API here
+  const handleAiSubmit = useCallback((prompt: string, options?: { model: string; systemPrompt?: string }) => {
+    const modelTag = options?.model ? `[${options.model}] ` : '';
+    addLog(`${modelTag}大模型 Prompt 执行中: "${prompt.length > 60 ? prompt.slice(0, 60) + '...' : prompt}"`, 'info');
     setTimeout(() => {
-      addLog('AI analysis complete. Recommendations generated.', 'success');
-    }, 1500);
+      addLog(`${modelTag}大模型文本处理完成: 已根据提示词生成测试策略与建议。`, 'success');
+    }, 1200);
   }, [addLog]);
 
   const handleUpdateNodes = useCallback((newNodes: TestStepNode[]) => {
@@ -603,6 +603,13 @@ export default function App() {
         isOpen={isAiAssistantOpen}
         onClose={() => setIsAiAssistantOpen(false)}
         onSubmit={handleAiSubmit}
+        currentContext={
+          selectedScenario ? `场景: ${selectedScenario.name}` :
+          selectedFolder ? `目录: ${selectedFolder.name}` :
+          selectedProject ? `工程: ${selectedProject.name}` :
+          '项目全局'
+        }
+        aiConfigs={aiConfigs}
       />
     </div>
   );
