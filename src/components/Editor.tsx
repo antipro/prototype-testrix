@@ -1,0 +1,254 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useCallback, useState } from 'react';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls, 
+  MiniMap, 
+  addEdge, 
+  Connection, 
+  Edge,
+  Node,
+  Panel,
+  applyNodeChanges,
+  applyEdgeChanges,
+  NodeChange,
+  EdgeChange
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { Scenario, TestCase, TestStepNode } from '../types';
+import { StepNode } from './StepNode';
+import { PropertyPanel } from './PropertyPanel';
+import { Plus, Settings2, Play, Square, Circle, Layers, PlayCircle, Share2, Save } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+
+interface EditorProps {
+  scenario: Scenario | null;
+  selectedTestCase: TestCase | null;
+  viewMode: 'scenario' | 'testcase';
+  isRunning: boolean;
+  isRecording: boolean;
+  onUpdateNodes: (nodes: TestStepNode[]) => void;
+  onUpdateEdges: (edges: Edge[]) => void;
+  onRun: () => void;
+  onStop: () => void;
+  onRecord: () => void;
+}
+
+const nodeTypes = {
+  step: StepNode,
+};
+
+export function Editor({ 
+  scenario,
+  selectedTestCase,
+  viewMode,
+  isRunning, 
+  isRecording, 
+  onUpdateNodes, 
+  onUpdateEdges,
+  onRun,
+  onStop,
+  onRecord
+}: EditorProps) {
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  const selectedNode = scenario?.nodes.find(n => n.id === selectedNodeId) || null;
+
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      if (!scenario || viewMode === 'testcase') return;
+      onUpdateNodes(applyNodeChanges(changes, scenario.nodes) as TestStepNode[]);
+    },
+    [scenario, onUpdateNodes, viewMode]
+  );
+
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      if (!scenario || viewMode === 'testcase') return;
+      onUpdateEdges(applyEdgeChanges(changes, scenario.edges));
+    },
+    [scenario, onUpdateEdges, viewMode]
+  );
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      if (!scenario || viewMode === 'testcase') return;
+      onUpdateEdges(addEdge(params, scenario.edges));
+    },
+    [scenario, onUpdateEdges, viewMode]
+  );
+
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
+  }, []);
+
+  const handleUpdateNodeData = useCallback((nodeId: string, newData: any) => {
+    if (!scenario) return;
+    onUpdateNodes(scenario.nodes.map(n => n.id === nodeId ? { ...n, data: newData } : n));
+  }, [scenario, onUpdateNodes]);
+
+  if (!scenario) {
+    return (
+      <div className="flex-1 flex justify-center items-center bg-[#fcfdfe] text-gray-300">
+        <div className="text-center animate-in fade-in duration-700">
+          <Layers size={64} className="mx-auto mb-6 opacity-10" />
+          <h3 className="text-lg font-bold text-gray-400">Design Your Workflow</h3>
+          <p className="text-xs max-w-xs mx-auto mt-2 leading-relaxed">Select a scenario from the sidebar or import an OpenAPI spec to begin orchestrating your test flows.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex bg-white relative overflow-hidden">
+      <div className="flex-1 relative flex flex-col min-w-0">
+        <div className="h-14 border-b border-gray-100 bg-white/90 backdrop-blur-md z-10 px-6 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase tracking-widest">Scenario</span>
+              <h1 className="text-sm font-bold text-gray-800">{scenario.name}</h1>
+            </div>
+            {selectedTestCase && (
+               <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded uppercase tracking-widest">TestCase</span>
+                <span className="text-xs font-bold text-gray-600">{selectedTestCase.name}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {viewMode === 'testcase' && (
+              <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
+                <button 
+                  onClick={isRunning ? onStop : onRun}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all ${
+                    isRunning 
+                      ? 'bg-red-500 text-white shadow-md' 
+                      : 'hover:bg-white hover:shadow-sm text-gray-600'
+                  }`}
+                >
+                  {isRunning ? <Square size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+                  {isRunning ? 'Stop' : 'Run Test'}
+                </button>
+              </div>
+            )}
+            
+            {viewMode === 'scenario' && (
+              <>
+                <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
+                  <button 
+                    onClick={onRecord}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all ${
+                      isRecording 
+                        ? 'bg-red-600 text-white shadow-md animate-pulse' 
+                        : 'hover:bg-white hover:shadow-sm text-gray-600'
+                    }`}
+                  >
+                    <Circle size={12} fill={isRecording ? 'white' : 'currentColor'} className={isRecording ? 'text-white' : 'text-red-500'} />
+                    {isRecording ? 'Recording' : 'Record'}
+                  </button>
+                </div>
+                <div className="h-6 w-[1px] bg-gray-200 mx-1" />
+                <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95">
+                  <Share2 size={14} />
+                  <span>Share</span>
+                </button>
+                <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95">
+                  <Save size={14} />
+                  <span>Save</span>
+                </button>
+                <div className="h-6 w-[1px] bg-gray-200 mx-1" />
+                <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95">
+                  <Plus size={14} />
+                  <span>Add Step</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 relative">
+          <ReactFlow
+            nodes={scenario.nodes}
+            edges={scenario.edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onPaneClick={() => setSelectedNodeId(null)}
+            nodeTypes={nodeTypes}
+            nodesDraggable={false}
+            fitView
+            className="bg-gray-50"
+          >
+            <Background gap={20} color="#e5e7eb" />
+            <Controls 
+              className="bg-white border-gray-200 shadow-lg rounded-lg overflow-hidden" 
+              showInteractive={false}
+            />
+            
+            <AnimatePresence>
+              {selectedTestCase && (
+                <Panel position="top-right" className="mr-4 mt-4">
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    className="bg-white/90 backdrop-blur-md border border-gray-200 p-4 rounded-xl shadow-2xl w-64"
+                  >
+                    <div className="flex items-center gap-2 mb-3 border-b border-gray-100 pb-2">
+                      <PlayCircle size={14} className="text-green-500" />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Test Parameters</span>
+                    </div>
+                    <div className="space-y-3">
+                      {Object.entries(selectedTestCase.inputs).map(([key, val]) => (
+                        <div key={key}>
+                          <label className="text-[9px] font-bold text-gray-400 uppercase">{key}</label>
+                          <div className="text-xs font-semibold text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-100">{String(val)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </Panel>
+              )}
+            </AnimatePresence>
+
+            {viewMode === 'testcase' && (
+              <Panel position="bottom-center" className="mb-4">
+                 <div className="bg-white/90 backdrop-blur-md border border-gray-200 px-4 py-2 rounded-full shadow-xl flex items-center gap-4">
+                    <div className="flex items-center gap-2 pr-4 border-r border-gray-200">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-[10px] font-bold text-gray-600 uppercase">Passed: {scenario.nodes.filter(n => n.data.status === 'passed').length}</span>
+                    </div>
+                    <div className="flex items-center gap-2 pr-4 border-r border-gray-200">
+                      <span className="w-2 h-2 rounded-full bg-red-500" />
+                      <span className="text-[10px] font-bold text-gray-600 uppercase">Failed: {scenario.nodes.filter(n => n.data.status === 'failed').length}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="text-[10px] font-bold text-gray-600 uppercase">Running: {scenario.nodes.filter(n => n.data.status === 'running').length}</span>
+                    </div>
+                 </div>
+              </Panel>
+            )}
+          </ReactFlow>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {selectedNode && (
+          <PropertyPanel 
+            node={selectedNode} 
+            onClose={() => setSelectedNodeId(null)}
+            onUpdateNode={handleUpdateNodeData}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
