@@ -9,6 +9,7 @@ import { Sidebar } from './components/Sidebar';
 import { Editor } from './components/Editor';
 import { LogPanel } from './components/LogPanel';
 import { SettingsDialog } from './components/SettingsDialog';
+import { AIPrompt } from './components/AIPrompt';
 import { Project, Folder, Scenario, TestCase, TestStepNode, LogEntry } from './types';
 import { Edge } from '@xyflow/react';
 import { Settings, Folder as FolderIcon, LayoutGrid, Info, Share2, Save, Code2, Trash2, Plus } from 'lucide-react';
@@ -380,8 +381,8 @@ export default function App() {
   const [selectedTestCaseId, setSelectedTestCaseId] = useState<string | null>(null);
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>(INITIAL_LOGS);
-  const [isRecording, setIsRecording] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
 
   const viewMode = useMemo(() => {
@@ -466,14 +467,13 @@ export default function App() {
     addLog('Execution aborted.', 'warn');
   }, [addLog]);
 
-  const handleRecord = useCallback(() => {
-    setIsRecording(prev => !prev);
-    if (!isRecording) {
-      addLog('Recording started. Nodes will be generated automatically.', 'info');
-    } else {
-      addLog('Recording stopped. Workflow generated.', 'success');
-    }
-  }, [isRecording, addLog]);
+  const handleAiSubmit = useCallback((prompt: string) => {
+    addLog(`AI Processing request: "${prompt}"`, 'info');
+    // In a real app, we would call the Gemini API here
+    setTimeout(() => {
+      addLog('AI analysis complete. Recommendations generated.', 'success');
+    }, 1500);
+  }, [addLog]);
 
   const handleUpdateNodes = useCallback((newNodes: TestStepNode[]) => {
     setProjects(prev => prev.map(p => ({
@@ -512,7 +512,10 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 text-gray-900 font-sans overflow-hidden">
-      <ControlPanel onOpenSettings={() => setIsSettingsOpen(true)} />
+      <ControlPanel 
+        onOpenSettings={() => setIsSettingsOpen(true)} 
+        onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
+      />
       
       <div className="flex flex-1 overflow-hidden">
         <Sidebar 
@@ -555,7 +558,6 @@ export default function App() {
             setSelectedFolderId(null);
             setSelectedProjectId(null);
           }}
-          onAdd={() => addLog('New asset creation initialized.', 'info')}
         />
         
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -573,12 +575,10 @@ export default function App() {
                 selectedTestCase={selectedTestCase}
                 viewMode={viewMode}
                 isRunning={isRunning}
-                isRecording={isRecording}
                 onUpdateNodes={handleUpdateNodes}
                 onUpdateEdges={handleUpdateEdges}
                 onRun={handleRunTest}
                 onStop={handleStopTest}
-                onRecord={handleRecord}
               />
             )}
             
@@ -597,6 +597,12 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)} 
         aiConfigs={aiConfigs}
         onUpdateAiConfigs={setAiConfigs}
+      />
+
+      <AIPrompt 
+        isOpen={isAiAssistantOpen}
+        onClose={() => setIsAiAssistantOpen(false)}
+        onSubmit={handleAiSubmit}
       />
     </div>
   );

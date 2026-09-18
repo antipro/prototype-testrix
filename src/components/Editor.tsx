@@ -32,12 +32,10 @@ interface EditorProps {
   selectedTestCase: TestCase | null;
   viewMode: 'scenario' | 'testcase';
   isRunning: boolean;
-  isRecording: boolean;
   onUpdateNodes: (nodes: TestStepNode[]) => void;
   onUpdateEdges: (edges: Edge[]) => void;
   onRun: () => void;
   onStop: () => void;
-  onRecord: () => void;
 }
 
 const nodeTypes = {
@@ -50,12 +48,10 @@ export function Editor({
   selectedTestCase,
   viewMode,
   isRunning, 
-  isRecording, 
   onUpdateNodes, 
   onUpdateEdges,
   onRun,
   onStop,
-  onRecord
 }: EditorProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
@@ -141,20 +137,6 @@ export function Editor({
             
             {viewMode === 'scenario' && (
               <>
-                <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
-                  <button 
-                    onClick={onRecord}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all ${
-                      isRecording 
-                        ? 'bg-red-600 text-white shadow-md animate-pulse' 
-                        : 'hover:bg-white hover:shadow-sm text-gray-600'
-                    }`}
-                  >
-                    <Circle size={12} fill={isRecording ? 'white' : 'currentColor'} className={isRecording ? 'text-white' : 'text-red-500'} />
-                    {isRecording ? 'Recording' : 'Record'}
-                  </button>
-                </div>
-                <div className="h-6 w-[1px] bg-gray-200 mx-1" />
                 <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95">
                   <Share2 size={14} />
                   <span>Share</span>

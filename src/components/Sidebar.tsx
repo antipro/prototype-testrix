@@ -27,7 +27,6 @@ interface SidebarProps {
   onSelectFolder: (id: string) => void;
   onSelectScenario: (id: string) => void;
   onSelectTestCase: (id: string) => void;
-  onAdd: () => void;
 }
 
 export function Sidebar({ 
@@ -40,7 +39,6 @@ export function Sidebar({
   onSelectFolder,
   onSelectScenario, 
   onSelectTestCase, 
-  onAdd 
 }: SidebarProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     'p1': true,
@@ -57,12 +55,6 @@ export function Sidebar({
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Project Explorer</h2>
-          <button 
-            onClick={onAdd}
-            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-          >
-            <Plus size={14} className="text-gray-500" />
-          </button>
         </div>
         <div className="relative">
           <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
